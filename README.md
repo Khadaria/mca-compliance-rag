@@ -80,9 +80,10 @@ User Query
 
 ##  Future Enhancements
 
+- Citation highlighting
 - Annual compliance calendar generation
 - Document upload and analysis
-- Citation highlighting
+
 
 ---
 
