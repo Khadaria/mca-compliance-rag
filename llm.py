@@ -7,7 +7,6 @@ from get_embedding_function import get_embedding_function
 
 CHROMA_PATH = "chroma"
 
-
 def generate_answer(query_text: str):
     # -------------------------------
     # Load vector database
