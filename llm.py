@@ -17,9 +17,8 @@ def generate_answer(query_text: str):
         embedding_function=embedding_function
     )
 
-    # -------------------------------
     # Retrieve relevant chunks
-    # -------------------------------
+    
     results = db.similarity_search_with_score(query_text, k=5)
 
     context_text = "\n\n---\n\n".join(
