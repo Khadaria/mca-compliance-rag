@@ -1,73 +1,52 @@
 import streamlit as st
+from llm import generate_answer
 
+st.set_page_config(page_title="MCA Compliance Assistant", layout="wide")
 
-# ---------------- MOCK RAG FUNCTION ----------------
-def ask_rag(query, top_k):
-    answer = (
-        "Under the Companies Act, 2013, every company is required to file "
-        "its annual financial statements with the Registrar of Companies "
-        "within 30 days of the Annual General Meeting (AGM)."
+st.title("📚 MCA Compliance RAG Assistant")
+
+st.caption("Indian Corporate Law | Companies Act 2013 | LLP Act 2008")
+
+# -------------------------------
+# Session Memory
+# -------------------------------
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# -------------------------------
+# Display Chat History
+# -------------------------------
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# -------------------------------
+# Chat Input
+# -------------------------------
+user_query = st.chat_input("Ask a compliance-related question...")
+
+if user_query:
+
+    # Show user message
+    st.session_state.messages.append(
+        {"role": "user", "content": user_query}
     )
 
-    sources = [
-        {
-            "title": "Companies Act, 2013 – Section 137",
-            "content": "A copy of the financial statements shall be filed with the Registrar..."
-        },
-        {
-            "title": "Companies Act, 2013 – Section 92",
-            "content": "Every company shall file its annual return within sixty days..."
-        }
-    ][:top_k]
+    with st.chat_message("user"):
+        st.markdown(user_query)
 
-    return answer, sources
+    # Generate assistant response
+    with st.chat_message("assistant"):
+        with st.spinner("Analyzing statutory provisions..."):
+            answer, sources = generate_answer(user_query)
 
+        st.markdown(answer)
 
-# ---------------- PAGE CONFIG ----------------
-st.set_page_config(
-    page_title="Corporate Compliance RAG Assistant",
-    page_icon="📘",
-    layout="wide"
-)
+        if sources:
+            with st.expander("📄 Source References"):
+                for src in sources:
+                    st.markdown(f"- {src}")
 
-
-# ---------------- SIDEBAR ----------------
-with st.sidebar:
-    st.header("⚙️ Settings")
-
-    top_k = st.slider(
-        "Number of documents to retrieve",
-        min_value=1,
-        max_value=10,
-        value=5
+    st.session_state.messages.append(
+        {"role": "assistant", "content": answer}
     )
-
-    show_debug = st.checkbox("Show debug info")
-
-
-# ---------------- MAIN UI ----------------
-st.title("📘 Corporate Compliance RAG Assistant")
-
-question = st.text_input(
-    "Ask a compliance question",
-    placeholder="What are the annual ROC filing requirements?"
-)
-
-if st.button("Ask"):
-    if question.strip():
-        with st.spinner("Processing..."):
-            answer, sources = ask_rag(question, top_k)
-
-        st.subheader("🧠 Answer")
-        st.success(answer)
-
-        st.subheader("📚 Sources")
-        for src in sources:
-            with st.expander(src["title"]):
-                st.write(src["content"])
-
-        if show_debug:
-            st.subheader("🔍 Debug")
-            st.write("Retrieved", len(sources), "documents")
-    else:
-        st.warning("Please enter a question")
