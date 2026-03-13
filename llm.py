@@ -1,6 +1,6 @@
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.llms.ollama import Ollama
+from langchain_ollama import OllamaLLM # Updated import
 
 from prompts import PROMPT_TEMPLATE
 from get_embedding_function import get_embedding_function
@@ -18,7 +18,6 @@ def generate_answer(query_text: str):
     )
 
     # Retrieve relevant chunks
-    
     results = db.similarity_search_with_score(query_text, k=5)
 
     context_text = "\n\n---\n\n".join(
@@ -37,8 +36,10 @@ def generate_answer(query_text: str):
     # -------------------------------
     # Call LLM
     # -------------------------------
-    model = Ollama(model="mistral")
-    response_text = model.invoke(prompt).strip()
+    model = OllamaLLM(model="mistral")
+    
+    # Return a stream instead of a blocked string
+    stream = model.stream(prompt)
 
     # -------------------------------
     # Prepare readable sources
@@ -49,4 +50,4 @@ def generate_answer(query_text: str):
         page = doc.metadata.get("page", "Unknown page")
         sources.append(f"{source} (Page {page})")
 
-    return response_text, list(set(sources))
+    return stream, list(set(sources))
