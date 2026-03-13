@@ -1,6 +1,7 @@
 import argparse
 import os
 import shutil
+
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
@@ -33,8 +34,14 @@ def load_documents():
 
 def split_documents(documents: list[Document]):
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1200,
-        chunk_overlap=100,
+        chunk_size=800,
+        chunk_overlap=150,
+        separators=[
+            "\n\n",
+            "\n",
+            ". ",
+            " ",
+        ],
         length_function=len,
         is_separator_regex=False,
     )
@@ -62,7 +69,7 @@ def add_to_chroma(chunks: list[Document]):
     if len(new_chunks):
         print(f"👉 Adding new documents: {len(new_chunks)}")
 
-        BATCH_SIZE = 1000
+        BATCH_SIZE = 100
 
         for i in range(0, len(new_chunks), BATCH_SIZE):
             batch_chunks = new_chunks[i:i+BATCH_SIZE]
@@ -83,6 +90,7 @@ def calculate_chunk_ids(chunks):
     for chunk in chunks:
         source = chunk.metadata.get("source")
         page = chunk.metadata.get("page")
+
         current_page_id = f"{source}:{page}"
 
         if current_page_id == last_page_id:
