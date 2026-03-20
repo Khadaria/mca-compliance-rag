@@ -1,0 +1,19 @@
+# AI & LLM Framework
+langchain
+langchain-core
+langchain-community
+langchain-chroma
+langchain-ollama
+
+# Vector Database
+chromadb
+
+# Retrieval Enhancements
+rank-bm25
+flashrank
+
+# Document Processing
+pypdf
+
+# User Interface
+streamlit
