@@ -1,93 +1,131 @@
-# Corporate Compliance RAG Assistant (India)
+# 📚 MCA Compliance RAG Assistant
 
-This project implements a **Retrieval-Augmented Generation (RAG)** system focused on **Indian corporate compliance**, specifically the **Companies Act, 2013** and the **Limited Liability Partnership (LLP) Act, 2008**.
-
-The system assists in answering compliance-related queries by retrieving relevant statutory provisions, forms, and filing requirements from a curated document corpus and generating grounded, context-aware responses using a language model.
+An AI-powered legal compliance assistant built using a Retrieval-Augmented Generation (RAG) pipeline, designed to answer questions about Indian corporate law — specifically the **Companies Act 2013** and the **LLP Act 2008**.
 
 ---
 
-## Problem Statement
+## 🧠 Overview
 
-Indian corporate compliance involves navigating extensive legal texts, frequent amendments, and strict filing timelines. Professionals and students often need quick, accurate answers to questions such as:
-- Applicable forms for a specific compliance event
-- Due dates and penalties
-- Relevant sections of the Companies Act or LLP Act
+**CompliCS** is a conversational RAG system that retrieves relevant statutory provisions from a curated corpus of MCA (Ministry of Corporate Affairs) documents and generates accurate, context-grounded answers using a local LLM via Ollama.
 
-
----
-
-## Solution Overview
-
-This project uses a **RAG architecture** to:
-1. Embed statutory documents into a vector database
-2. Retrieve the most relevant legal context for a user query
-3. Generate responses strictly grounded in the retrieved content
-
-This approach helps **reduce hallucinations** and improves reliability in the legal domain.
+Key capabilities:
+- **Hybrid Retrieval**: Combines semantic vector search (ChromaDB + MMR) with keyword-based BM25 retrieval for high-recall, precise document matching.
+- **LLM-assisted Reranking**: Uses FlashRank to reorder retrieved chunks by actual relevance to the user query.
+- **LLM Metadata Extraction**: Extracts act names and section references from document chunks at ingestion time to enrich citations.
+- **Conversational Memory**: Maintains multi-turn chat history using LangChain's `RunnableWithMessageHistory`.
+- **Hindi Filtering**: Skips pages containing non-Latin script during document loading to ensure clean ingestion.
+- **Streamlit UI**: A simple, interactive chat interface with expandable source references.
 
 ---
 
-## Key Features
+## 🗂️ Project Structure
 
-- Query-based retrieval from Companies Act and LLP Act documents
-- Context-aware and explainable responses
-- Metadata-based filtering (Act, Section, Form, Due Date)
-- Modular and extensible RAG pipeline
-
----
-
-## Tech Stack
-
-- **Language:** Python  
-- **LLM:** Open-source LLM (Mistral / LLaMA)  
-- **Embeddings:** Sentence Transformers  
-- **Vector Database:** ChromaDB  
-- **RAG Framework:** LangChain  
-- **Frontend:** Streamlit  
-
----
-
-## Data Sources
-
-- Companies Act, 2013 (selected sections)
-- LLP Act, 2008
-- Statutory forms and compliance rules
-- Official circulars and amendments (where applicable)
-
-All data used is publicly available.
+```
+mca-compliance-rag/
+├── app.py                      # Streamlit chat application entry point
+├── populate_database.py        # Ingestion script: load → chunk → enrich → store
+├── requirements.txt
+├── corpus_raw_v1/              # Source PDF documents (MCA statutes)
+├── chroma/                     # Persisted ChromaDB vector store
+└── rag_compliance/             # Core modular RAG package
+    ├── config.py               # Central config (paths, model names)
+    ├── embeddings/
+    │   └── embedder.py         # Embedding function (Ollama)
+    ├── ingestion/
+    │   ├── loader.py           # PDF loading + Hindi script filtering
+    │   ├── chunker.py          # Recursive character text splitting
+    │   └── metadata.py         # LLM-assisted metadata enrichment
+    ├── retrieval/
+    │   ├── hybrid_retriever.py # BM25 + Vector MMR hybrid retriever
+    │   └── reranker.py         # FlashRank-based cross-encoder reranker
+    └── generation/
+        ├── prompts.py          # System prompt template
+        └── chain.py            # RAG chain: retrieve → rerank → generate
+```
 
 ---
 
-## System Architecture
+## ⚙️ Setup & Installation
 
-User Query  
-→ Embedding  
-→ Vector Database Retrieval  
-→ Context Injection  
-→ LLM Response Generation
+### Prerequisites
+- Python 3.10+
+- [Ollama](https://ollama.ai/) installed and running locally
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Pull the Required Ollama Model
+
+```bash
+ollama pull llama3.2
+```
+> The model name can be configured in `rag_compliance/config.py`.
+
+### Populate the Vector Database
+
+Place your PDF documents in the `corpus_raw_v1/` directory, then run:
+
+```bash
+python populate_database.py
+```
+
+To reset and rebuild the database from scratch:
+
+```bash
+python populate_database.py --reset
+```
+
+### Run the App
+
+```bash
+streamlit run app.py
+```
 
 ---
 
-## Intended Use
+## 🔍 How It Works
 
-- Academic project on RAG and vector databases
-- Educational assistance for corporate law concepts
-- Demonstration of legal-domain AI applications
-
- *This tool is for educational purposes only and does not constitute legal advice.*
+```
+User Query
+    │
+    ▼
+Hybrid Retriever
+  ├── Vector Store (ChromaDB + MMR, k=20)
+  └── BM25 Retriever (keyword match, k=20)
+    │
+    ▼
+Merged & Deduplicated Document Pool
+    │
+    ▼
+FlashRank Reranker (top_k=5)
+    │
+    ▼
+LLM (Ollama) + Chat History
+    │
+    ▼
+Streamed Answer + Source Citations
+```
 
 ---
 
-##  Future Enhancements
+## 🛠️ Tech Stack
 
-- Citation highlighting
-- Annual compliance calendar generation
-- Document upload and analysis
-
+| Category | Technology |
+|---|---|
+| LLM Framework | LangChain, LangChain-Community, LangChain-Core |
+| LLM Inference | Ollama (local) |
+| Vector Store | ChromaDB |
+| Embeddings | Ollama Embeddings |
+| Keyword Retrieval | BM25 (rank-bm25) |
+| Reranking | FlashRank |
+| Document Parsing | PyPDF |
+| UI | Streamlit |
 
 ---
 
-##  Author
+## 📄 License
 
-**Vishesh Khadaria**  
-**Dhruv Chaturvedi**
+[MIT](LICENSE)
