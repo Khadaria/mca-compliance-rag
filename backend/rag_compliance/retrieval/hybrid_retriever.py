@@ -13,18 +13,31 @@ class HybridRetriever:
         self.bm25_weight = bm25_weight
         self.vector_weight = vector_weight
 
-    def get_relevant_documents(self, query):
-        bm25_docs = self.bm25.get_relevant_documents(query)
-        vector_docs = self.vector.get_relevant_documents(query)
+    def _safe_retrieve(self, retriever, query):
+        """
+        Handles both old + new LangChain APIs
+        """
+        if retriever is None:
+            return []
 
-        # Combine results
-        combined = []
+        # New LangChain
+        if hasattr(retriever, "invoke"):
+            return retriever.invoke(query)
 
-        # Add weighted results (simple version)
-        combined.extend(vector_docs)
-        combined.extend(bm25_docs)
+        # Old LangChain
+        elif hasattr(retriever, "get_relevant_documents"):
+            return retriever.get_relevant_documents(query)
 
-        # Remove duplicates
+        else:
+            raise AttributeError("Retriever has no valid retrieval method")
+
+    def get_relevant_documents(self, query: str):
+        bm25_docs = self._safe_retrieve(self.bm25, query)
+        vector_docs = self._safe_retrieve(self.vector, query)
+
+        combined = vector_docs + bm25_docs
+
+        # Deduplicate
         seen = set()
         unique_docs = []
         for doc in combined:
@@ -34,12 +47,16 @@ class HybridRetriever:
 
         return unique_docs
 
+    def invoke(self, query: str):
+        return self.get_relevant_documents(query)
 
+
+# ✅ THIS WAS MISSING — ADD IT BACK
 def get_hybrid_retriever():
     """
-    Returns a HybridRetriever combining:
-    - Chroma Vector Store (Semantic Search)
-    - BM25 (Keyword Search)
+    Returns HybridRetriever combining:
+    - Chroma (vector search)
+    - BM25 (keyword search)
     """
 
     db = Chroma(
@@ -71,9 +88,7 @@ def get_hybrid_retriever():
     except Exception as e:
         print(f"Warning: Could not initialize BM25Retriever. {e}")
 
-    # ✅ Return hybrid if possible
     if bm25_retriever:
         return HybridRetriever(bm25_retriever, vector_retriever)
 
-    # ✅ Fallback
     return vector_retriever

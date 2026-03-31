@@ -7,67 +7,86 @@ from rag_compliance.generation.prompts import PROMPT_TEMPLATE
 from rag_compliance.retrieval.hybrid_retriever import get_hybrid_retriever
 from rag_compliance.retrieval.reranker import ComponentReranker
 
-# Initialize models and retrievers once
+# Initialize once (important for performance)
 llm = ChatOllama(model=LLM_MODEL)
 hybrid_retriever = get_hybrid_retriever()
 reranker = ComponentReranker()
+
 
 def create_conversational_chain():
     prompt = ChatPromptTemplate.from_messages([
         ("system", PROMPT_TEMPLATE),
         MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{question}")
+        ("human", "Context:\n{context}\n\nQuestion:\n{question}")
     ])
-    
+
     chain = prompt | llm
     return chain
 
+
 def process_query_with_rag(query: str, session_id: str, get_session_history_func):
     """
-    1. Retrieve docs via Hybrid Engine
-    2. Rerank docs via Flashrank
-    3. Generate answer (with message history)
+    1. Retrieve documents
+    2. Rerank documents
+    3. Generate response with context
     """
-    # 1. Retrieval
-    raw_docs = hybrid_retriever.invoke(query)
-    
+
+    # ✅ Retrieval (fixed)
+    if hasattr(hybrid_retriever, "get_relevant_documents"):
+        raw_docs = hybrid_retriever.get_relevant_documents(query)
+    else:
+        # fallback (if only vector retriever returned)
+        raw_docs = hybrid_retriever.invoke(query)
+
     # 2. Reranking
     reranked_docs = reranker.rerank(query, raw_docs, top_k=5)
-    
-    # Format context and sources
+
+    # Build context
     context = "\n\n---\n\n".join([doc.page_content for doc in reranked_docs])
-    
-    # Extract metadata gracefully, including LLM-extracted 'act' or 'section'
+
+    # Extract sources
     sources = []
+    seen = set()
     for doc in reranked_docs:
         source_name = doc.metadata.get("source", "Unknown Document")
         act = doc.metadata.get("act", "Unknown Act")
         section = doc.metadata.get("section", "Unknown Section")
-        
-        # Build richer citation if available
+
         if act != "Unknown Act" and section != "Unknown Section":
             label = f"{source_name} (Extracted: {act}, {section})"
         else:
             label = source_name
             
-        sources.append(label)
-        
-    sources = list(set(sources)) # Deduplicate visually
-    
-    # 3. Conversational Pipeline
+        if "/" in label or "\\" in label:
+            label = label.replace("\\", "/").split("/")[-1]
+
+        key = (label, doc.metadata.get("page", 1))
+        if key not in seen:
+            snippet = doc.page_content.strip()
+            if len(snippet) > 200:
+                snippet = snippet[:197] + "..."
+            
+            sources.append({
+                "doc": label,
+                "page": doc.metadata.get("page", 1),
+                "text": snippet
+            })
+            seen.add(key)
+
+    # Conversational chain
     chain = create_conversational_chain()
-    
+
     conversational_chain = RunnableWithMessageHistory(
         chain,
         get_session_history_func,
         input_messages_key="question",
         history_messages_key="chat_history",
     )
-    
-    # Stream the output
+
+    # Stream response
     stream = conversational_chain.stream(
         {"question": query, "context": context},
         config={"configurable": {"session_id": session_id}}
     )
-    
+
     return stream, sources

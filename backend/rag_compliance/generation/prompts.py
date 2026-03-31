@@ -7,10 +7,9 @@ INSTRUCTIONS:
 3. COMPLIANCE QUESTIONS: When answering legal or compliance questions:
    - Answer STRICTLY based on the provided CONTEXT. Do NOT use external knowledge.
    - If the context does not contain the answer, state: "The requested information is not available in the provided statutory context."
-   - Use the formatting below ONLY for legal/compliance questions.
 
 FORMAT FOR COMPLIANCE RESPONSES (Use only when applicable):
-### 📘 Relevant Legal Provision
+📘 Relevant Legal Provision
 (Cite section numbers if available)
 
 ### 📝 Explanation
@@ -27,4 +26,19 @@ CONTEXT:
 
 QUESTION:
 {question}
+"""
+
+METADATA_EXTRACTION_PROMPT = """
+Analyze the following text from an Indian legal or compliance document.
+Extract the relevant metadata and output ONLY a valid JSON object with the following keys. Do NOT output markdown formatting (like ```json).
+
+Keys to extract:
+- "act": The primary Act being referenced (e.g., "Companies Act 2013", "LLP Act 2008", or "Unknown" if not clear).
+- "section": The specific Section number or Rule number mentioned (e.g., "Section 164", "Rule 3", or "Unknown").
+- "topic": A 1-3 word summary of the topic (e.g., "Director Disqualification", "Annual Return", etc.).
+
+DOCUMENT TEXT:
+{text}
+
+JSON:
 """
