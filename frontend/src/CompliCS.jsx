@@ -32,43 +32,7 @@ import {
   CornerDownLeft,
 } from "lucide-react";
 
-const MOCK_SOURCES = [
-  {
-    doc: "Companies_Act_2013.pdf",
-    page: "142",
-    text: "Section 164(2) provides that no person who is or has been a director of a company which has not filed financial statements or annual returns for any continuous period of three financial years shall be eligible to be re-appointed as a director of that company or appointed in other company for a period of five years from the date on which the said company fails to do so.",
-  },
-  {
-    doc: "Companies_Act_2013.pdf",
-    page: "139",
-    text: "Where a person is in default in complying with the provisions of sub-section (1) or sub-section (2), he shall be punishable with imprisonment for a term which may extend to six months or with fine which shall not be less than five lakh rupees but which may extend to twenty-five lakh rupees, or with both.",
-  },
-  {
-    doc: "MCA_Circulars_2023.pdf",
-    page: "7",
-    text: "In exercise of the powers conferred by sub-section (1) of section 396 of the Companies Act, 2013, the Central Government hereby makes the following rules to further amend the Companies (Registration Offices and Fees) Rules, 2014.",
-  },
-];
-
-const MOCK_ANSWER = `## Disqualification Under Section 164 — Companies Act 2013
-
-Under **Section 164** of the Companies Act, 2013, a person is **disqualified** from being appointed or re-appointed as a Director if any of the following conditions are met:
-
-### Key Disqualification Grounds
-
-1. **Unsound Mind** — Adjudged by a competent court and the finding is in force.
-2. **Insolvency** — An undischarged insolvent.
-3. **Conviction for Moral Turpitude** — Convicted of an offence involving moral turpitude and sentenced to imprisonment for not less than six months, within a period of five years from the date of expiry of such sentence.
-4. **Non-payment of Calls** — Failure to pay any call in respect of shares of the company held by him.
-
-### Penalty for Non-Filing (Section 164(2))
-
-A director of a company which has **not filed financial statements or annual returns** for any continuous period of **three financial years** shall be disqualified for a period of **five years**.
-
-> The person shall be punishable with imprisonment for a term extending to **six months** or with fine not less than **₹5 Lakh** but extending to **₹25 Lakh**, or both.
-
-### Applicability
-This section applies to both public and private companies, and the disqualification extends to appointment in *any other company* during the restricted period.`;
+const API_URL = "http://localhost:8000";
 
 const QUICK_ACTIONS = [
   {
@@ -172,7 +136,7 @@ function SourceCard({ source, index }) {
         </button>
       </div>
       <div style={{ fontSize: "11.5px", color: "#64748b", lineHeight: 1.65, borderTop: "1px solid rgba(148,163,184,0.08)", paddingTop: "8px", fontFamily: "Georgia, serif" }}>
-        "{source.text.substring(0, 160)}..."
+        "{(source.text || '').substring(0, 160)}{source.text && source.text.length > 160 ? '...' : ''}"
       </div>
     </div>
   );
@@ -412,19 +376,21 @@ function Workspace({ onBack }) {
     setSources([]);
     setSourcesOpen(false);
     try {
-      const res = await fetch("http://localhost:8000/query", {
+      const res = await fetch(`${API_URL}/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });
+      if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+      }
       const data = await res.json();
       setMessages((prev) => [...prev, { role: "assistant", content: data.answer, sources: data.sources }]);
       setSources(data.sources || []);
       if (data.sources?.length) setSourcesOpen(true);
-    } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: MOCK_ANSWER, sources: MOCK_SOURCES }]);
-      setSources(MOCK_SOURCES);
-      setSourcesOpen(true);
+    } catch (err) {
+      const errorMsg = `## ⚠️ Connection Error\n\nCould not reach the CompliCS backend server.\n\n**Details:** ${err.message}\n\n### How to Fix\n1. Make sure the FastAPI server is running: \`cd backend && python server.py\`\n2. Verify it is accessible at ${API_URL}/health\n3. Check if Ollama is running with the Mistral model loaded`;
+      setMessages((prev) => [...prev, { role: "assistant", content: errorMsg, sources: [] }]);
     }
     setLoading(false);
   };
@@ -434,9 +400,8 @@ function Workspace({ onBack }) {
   };
 
   const docs = [
-    { name: "Companies Act 2013", pages: "470 pages", chunks: "1,842 chunks", color: "#10b981" },
-    { name: "LLP Act 2008", pages: "94 pages", chunks: "387 chunks", color: "#0ea5e9" },
-    { name: "MCA Circulars 2023", pages: "Ongoing", chunks: "214 chunks", color: "#a78bfa" },
+    { name: "Companies Act 2013", color: "#10b981" },
+    { name: "LLP Act 2008", color: "#0ea5e9" },
   ];
 
   return (
