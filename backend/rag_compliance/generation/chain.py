@@ -46,6 +46,7 @@ def process_query_with_rag(query: str, session_id: str, get_session_history_func
 
     # Extract sources
     sources = []
+    seen = set()
     for doc in reranked_docs:
         source_name = doc.metadata.get("source", "Unknown Document")
         act = doc.metadata.get("act", "Unknown Act")
@@ -55,10 +56,22 @@ def process_query_with_rag(query: str, session_id: str, get_session_history_func
             label = f"{source_name} (Extracted: {act}, {section})"
         else:
             label = source_name
+            
+        if "/" in label or "\\" in label:
+            label = label.replace("\\", "/").split("/")[-1]
 
-        sources.append(label)
-
-    sources = list(set(sources))
+        key = (label, doc.metadata.get("page", 1))
+        if key not in seen:
+            snippet = doc.page_content.strip()
+            if len(snippet) > 200:
+                snippet = snippet[:197] + "..."
+            
+            sources.append({
+                "doc": label,
+                "page": doc.metadata.get("page", 1),
+                "text": snippet
+            })
+            seen.add(key)
 
     # Conversational chain
     chain = create_conversational_chain()
