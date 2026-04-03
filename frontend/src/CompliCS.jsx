@@ -47,8 +47,8 @@ const QUICK_ACTIONS = [
   },
   {
     icon: Clock,
-    label: "Annual Compliance",
-    query: "What are the mandatory annual compliance filings for a private limited company under Companies Act 2013?",
+    label: "Sectional Query",
+    query: "What does Section 173 state regarding board meetings?",
   },
   {
     icon: Shield,
@@ -58,7 +58,13 @@ const QUICK_ACTIONS = [
 ];
 
 function MarkdownRenderer({ content }) {
-  const lines = content.split("\n");
+  // Pre-process: strip code fences and control tokens that may leak from the LLM
+  let cleaned = content.replace(/```[\s\S]*?```/g, '').replace(/```/g, '');
+  // Strip Mistral control tokens
+  cleaned = cleaned.replace(/\[control_\d+\]/g, '').replace(/\[\/?[A-Z_]{2,}\]/g, '');
+  // Clean up excessive whitespace
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  const lines = cleaned.split("\n");
   const elements = [];
   let i = 0;
   while (i < lines.length) {
@@ -345,7 +351,7 @@ function LandingPage({ onEnter }) {
             Enter the Workspace <ArrowRight size={18} />
           </button>
           <div style={{ marginTop: "20px", fontSize: "12px", color: "#475569" }}>
-            Companies Act 2013 · LLP Act 2008 · MCA Circulars
+            Companies Act 2013 · LLP Act 2008 
           </div>
         </div>
       </section>
@@ -362,6 +368,25 @@ function Workspace({ onBack }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+  const textarea = textareaRef.current;
+  if (!textarea) return;
+
+  // Reset to auto first so scrollHeight shrinks correctly when deleting text
+  textarea.style.height = "auto";
+
+  // Clamp between one line (~44px) and 5 lines (~180px)
+  const MIN_HEIGHT = 44;
+  const MAX_HEIGHT = 180;
+  const newHeight = Math.min(Math.max(textarea.scrollHeight, MIN_HEIGHT), MAX_HEIGHT);
+
+  textarea.style.height = `${newHeight}px`;
+
+  // Only show scrollbar when content exceeds the max cap
+  textarea.style.overflowY = textarea.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
+}, [input]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -471,7 +496,7 @@ function Workspace({ onBack }) {
             <div style={{ padding: "0 14px", marginTop: "auto", paddingBottom: "16px" }}>
               <div style={{ fontSize: "10px", color: "#334155", letterSpacing: "0.08em", fontWeight: 600, marginBottom: "8px" }}>RAG PIPELINE</div>
               <div style={{ padding: "10px 12px", borderRadius: "8px", background: "rgba(15,23,42,0.4)", border: "1px solid rgba(148,163,184,0.06)", fontSize: "11px", color: "#475569", lineHeight: 1.7 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Embeddings</span><span style={{ color: "#64748b" }}>HuggingFace</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Embeddings</span><span style={{ color: "#64748b" }}>Ollama</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>Vector DB</span><span style={{ color: "#64748b" }}>ChromaDB</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>LLM</span><span style={{ color: "#64748b" }}>Mistral 7B</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>Framework</span><span style={{ color: "#64748b" }}>LangChain</span></div>
@@ -523,7 +548,7 @@ function Workspace({ onBack }) {
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px", paddingBottom: "10px", borderBottom: "1px solid rgba(148,163,184,0.08)" }}>
                         <Shield size={11} color="#10b981" />
                         <span style={{ fontSize: "10px", color: "#10b981", fontWeight: 600, letterSpacing: "0.04em" }}>VERIFIED BY COMPLICS</span>
-                        {msg.sources && (
+                        {msg.sources?.length > 0 && (
                           <span style={{ marginLeft: "auto", fontSize: "10px", color: "#475569" }}>{msg.sources.length} sources retrieved</span>
                         )}
                       </div>
@@ -561,14 +586,28 @@ function Workspace({ onBack }) {
             <div style={{ maxWidth: "760px", margin: "0 auto", position: "relative" }}>
               <div style={{ display: "flex", alignItems: "flex-end", gap: "10px", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(148,163,184,0.15)", borderRadius: "12px", padding: "12px 14px", transition: "border-color 0.2s" }}>
                 <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKey}
-                  placeholder="Ask about Companies Act, LLP Act compliance..."
-                  rows={1}
-                  style={{ flex: 1, background: "transparent", border: "none", resize: "none", color: "#e2e8f0", fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", outline: "none", maxHeight: "120px", overflow: "auto" }}
-                />
+                    ref={textareaRef}          // ← swap from inputRef to textareaRef
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKey}
+                    placeholder="Ask about Companies Act, LLP Act compliance..."
+                    style={{
+                      flex: 1,
+                      background: "transparent",
+                      border: "none",
+                      resize: "none",          // ← disable manual drag-resize
+                      color: "#e2e8f0",
+                      fontSize: "14px",
+                      lineHeight: "22px",
+                      fontFamily: "inherit",
+                      outline: "none",
+                      minHeight: "44px",       // ← replaces rows={1}
+                      height: "44px",          // ← initial height, JS takes over after first render
+                      overflowY: "hidden",     // ← JS will switch to "auto" when capped
+                      display: "block",
+                      width: "100%",
+                    }}
+                  />
                 <button onClick={() => handleSubmit()} disabled={!input.trim() || loading} style={{ width: "34px", height: "34px", borderRadius: "8px", background: input.trim() ? "#10b981" : "rgba(148,163,184,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "not-allowed", flexShrink: 0, transition: "background 0.2s" }}>
                   <SendHorizontal size={15} color={input.trim() ? "#fff" : "#475569"} />
                 </button>
