@@ -3,13 +3,11 @@ langchain
 langchain-core
 langchain-community
 langchain-chroma
-langchain-ollama
 
-# LLM Providers (cloud, free tier)
+# LLM Provider
 langchain-groq
-langchain-google-genai
 
-# Embeddings (runs locally in-process, no Ollama server needed)
+# Embeddings (runs locally in-process)
 langchain-huggingface
 sentence-transformers
 
@@ -24,6 +22,5 @@ flashrank
 pypdf
 
 # User Interface
-streamlit
 fastapi
 uvicorn

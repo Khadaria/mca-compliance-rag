@@ -66,7 +66,7 @@ def _clean_llm_output(text: str) -> str:
     text = re.sub(r'```[\s\S]*?```', '', text)
     # Remove stray triple backticks
     text = text.replace('```', '')
-    # Remove Mistral control tokens: [control_XX], [TOOL_RESULTS], [INST], [/INST], etc.
+    # Remove common control tokens if they leak from model output.
     text = re.sub(r'\[control_\d+\]', '', text)
     text = re.sub(r'\[/?TOOL_RESULTS\]', '', text)
     text = re.sub(r'\[/?INST\]', '', text)

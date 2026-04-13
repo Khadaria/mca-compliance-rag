@@ -1,20 +1,17 @@
 import json
 from langchain_core.prompts import PromptTemplate
-from rag_compliance.config import LLM_PROVIDER, GROQ_API_KEY, GROQ_MODEL, GEMINI_API_KEY, GEMINI_MODEL, LLM_MODEL
+from rag_compliance.config import GROQ_API_KEY, GROQ_MODEL
 from rag_compliance.generation.prompts import METADATA_EXTRACTION_PROMPT
 
 
 def get_metadata_llm():
-    """Return a zero-temperature LLM for structured metadata extraction."""
-    if LLM_PROVIDER == "groq":
-        from langchain_groq import ChatGroq
-        return ChatGroq(model=GROQ_MODEL, groq_api_key=GROQ_API_KEY, temperature=0)
-    elif LLM_PROVIDER == "gemini":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        return ChatGoogleGenerativeAI(model=GEMINI_MODEL, google_api_key=GEMINI_API_KEY, temperature=0)
-    else:
-        from langchain_ollama import ChatOllama
-        return ChatOllama(model=LLM_MODEL, temperature=0, format="json")
+    """Return a zero-temperature Groq model for structured metadata extraction."""
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY is not set.")
+
+    from langchain_groq import ChatGroq
+
+    return ChatGroq(model=GROQ_MODEL, groq_api_key=GROQ_API_KEY, temperature=0)
 
 
 def extract_metadata_for_chunk(text: str, chain) -> dict:
