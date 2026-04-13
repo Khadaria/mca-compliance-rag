@@ -34,10 +34,23 @@ def get_llm():
         return ChatOllama(model=LLM_MODEL)
 
 
-# Initialize once at module load (important for performance)
-llm = get_llm()
-hybrid_retriever = get_hybrid_retriever()
-reranker = ComponentReranker()
+# --- Lazy globals: initialized via initialize() called from FastAPI lifespan ---
+_llm = None
+_hybrid_retriever = None
+_reranker = None
+
+
+def initialize():
+    """Called once after uvicorn binds the port (from FastAPI lifespan).
+    Keeps the port-scan alive while heavy models load."""
+    global _llm, _hybrid_retriever, _reranker
+    print("[Startup] Loading LLM...")
+    _llm = get_llm()
+    print("[Startup] Loading hybrid retriever + embeddings...")
+    _hybrid_retriever = get_hybrid_retriever()
+    print("[Startup] Loading reranker...")
+    _reranker = ComponentReranker()
+    print("[Startup] All components ready.")
 
 
 def create_conversational_chain():
@@ -46,7 +59,7 @@ def create_conversational_chain():
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "Context:\n{context}\n\nQuestion:\n{question}")
     ])
-    chain = prompt | llm
+    chain = prompt | _llm
     return chain
 
 
@@ -58,13 +71,13 @@ def process_query_with_rag(query: str, session_id: str, get_session_history_func
     """
 
     # 1. Retrieve
-    if hasattr(hybrid_retriever, "get_relevant_documents"):
-        raw_docs = hybrid_retriever.get_relevant_documents(query)
+    if hasattr(_hybrid_retriever, "get_relevant_documents"):
+        raw_docs = _hybrid_retriever.get_relevant_documents(query)
     else:
-        raw_docs = hybrid_retriever.invoke(query)
+        raw_docs = _hybrid_retriever.invoke(query)
 
     # 2. Rerank
-    reranked_docs = reranker.rerank(query, raw_docs, top_k=5)
+    reranked_docs = _reranker.rerank(query, raw_docs, top_k=5)
 
     # 3. Build context string
     context = "\n\n---\n\n".join([doc.page_content for doc in reranked_docs])

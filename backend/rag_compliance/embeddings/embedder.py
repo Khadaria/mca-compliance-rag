@@ -7,12 +7,7 @@ def get_embedding_function():
 
     if provider == "sentence_transformers":
         from langchain_huggingface import HuggingFaceEmbeddings
-        # local_files_only=True: use cached model, don't try to contact huggingface.co
-        # The model was already downloaded during populate_database.py
-        return HuggingFaceEmbeddings(
-            model_name="all-MiniLM-L6-v2",
-            model_kwargs={"local_files_only": True}
-        )
+        return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
     else:
         # Default: Ollama (for local development only)

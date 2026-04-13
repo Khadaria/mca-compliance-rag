@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -6,9 +7,25 @@ import traceback
 import re
 
 from langchain_community.chat_message_histories import ChatMessageHistory
-from rag_compliance.generation.chain import process_query_with_rag
+from rag_compliance.generation.chain import process_query_with_rag, initialize
 
-app = FastAPI(title="CompliCS API", description="MCA Compliance RAG API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    FastAPI lifespan: runs AFTER uvicorn binds the port.
+    Heavy model loading (embeddings, ChromaDB, BM25, reranker) happens here
+    so Render's port scan succeeds immediately.
+    """
+    print("[Lifespan] Starting component initialization...")
+    initialize()
+    print("[Lifespan] Ready to serve requests.")
+    yield
+    # Shutdown (nothing to clean up)
+
+
+app = FastAPI(title="CompliCS API", description="MCA Compliance RAG API", lifespan=lifespan)
+
 
 # Allow CORS so the React frontend can communicate with this backend
 app.add_middleware(
