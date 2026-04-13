@@ -5,21 +5,22 @@ from pydantic import BaseModel
 import uvicorn
 import traceback
 import re
+import threading
 
 from langchain_community.chat_message_histories import ChatMessageHistory
-from rag_compliance.generation.chain import process_query_with_rag, initialize
+from rag_compliance.generation.chain import process_query_with_rag, initialize, is_ready
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    FastAPI lifespan: runs AFTER uvicorn binds the port.
-    Heavy model loading (embeddings, ChromaDB, BM25, reranker) happens here
-    so Render's port scan succeeds immediately.
+    FastAPI lifespan: runs as uvicorn starts.
+    We spawn model loading in a background thread and yield immediately
+    so Render's port scan succeeds instantly.
     """
-    print("[Lifespan] Starting component initialization...")
-    initialize()
-    print("[Lifespan] Ready to serve requests.")
+    print("[Lifespan] Starting component initialization in background thread...")
+    threading.Thread(target=initialize, daemon=True).start()
+    print("[Lifespan] Yielding to let uvicorn bind the port.")
     yield
     # Shutdown (nothing to clean up)
 
@@ -104,6 +105,12 @@ def _is_garbage_response(text: str) -> bool:
 
 @app.post("/query")
 def query_rag(request: QueryRequest):
+    if not is_ready():
+        return {
+            "answer": "⏳ The compliance database is currently initializing (waking up from cold start). Please wait about a minute and try your question again.",
+            "sources": []
+        }
+
     try:
         stream, sources = process_query_with_rag(
             query=request.question,
@@ -147,7 +154,7 @@ def query_rag(request: QueryRequest):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "ready": is_ready()}
 
 
 if __name__ == "__main__":
