@@ -32,8 +32,7 @@ import {
   CornerDownLeft,
 } from "lucide-react";
 
-const API_URL = "http://localhost:8000";
-
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const QUICK_ACTIONS = [
   {
     icon: AlertCircle,
@@ -351,7 +350,7 @@ function LandingPage({ onEnter }) {
             Enter the Workspace <ArrowRight size={18} />
           </button>
           <div style={{ marginTop: "20px", fontSize: "12px", color: "#475569" }}>
-            Companies Act 2013 · LLP Act 2008 
+            Companies Act 2013 · LLP Act 2008
           </div>
         </div>
       </section>
@@ -371,22 +370,22 @@ function Workspace({ onBack }) {
   const textareaRef = useRef(null);
 
   useEffect(() => {
-  const textarea = textareaRef.current;
-  if (!textarea) return;
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-  // Reset to auto first so scrollHeight shrinks correctly when deleting text
-  textarea.style.height = "auto";
+    // Reset to auto first so scrollHeight shrinks correctly when deleting text
+    textarea.style.height = "auto";
 
-  // Clamp between one line (~44px) and 5 lines (~180px)
-  const MIN_HEIGHT = 44;
-  const MAX_HEIGHT = 180;
-  const newHeight = Math.min(Math.max(textarea.scrollHeight, MIN_HEIGHT), MAX_HEIGHT);
+    // Clamp between one line (~44px) and 5 lines (~180px)
+    const MIN_HEIGHT = 44;
+    const MAX_HEIGHT = 180;
+    const newHeight = Math.min(Math.max(textarea.scrollHeight, MIN_HEIGHT), MAX_HEIGHT);
 
-  textarea.style.height = `${newHeight}px`;
+    textarea.style.height = `${newHeight}px`;
 
-  // Only show scrollbar when content exceeds the max cap
-  textarea.style.overflowY = textarea.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
-}, [input]);
+    // Only show scrollbar when content exceeds the max cap
+    textarea.style.overflowY = textarea.scrollHeight > MAX_HEIGHT ? "auto" : "hidden";
+  }, [input]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -586,28 +585,28 @@ function Workspace({ onBack }) {
             <div style={{ maxWidth: "760px", margin: "0 auto", position: "relative" }}>
               <div style={{ display: "flex", alignItems: "flex-end", gap: "10px", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(148,163,184,0.15)", borderRadius: "12px", padding: "12px 14px", transition: "border-color 0.2s" }}>
                 <textarea
-                    ref={textareaRef}          // ← swap from inputRef to textareaRef
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKey}
-                    placeholder="Ask about Companies Act, LLP Act compliance..."
-                    style={{
-                      flex: 1,
-                      background: "transparent",
-                      border: "none",
-                      resize: "none",          // ← disable manual drag-resize
-                      color: "#e2e8f0",
-                      fontSize: "14px",
-                      lineHeight: "22px",
-                      fontFamily: "inherit",
-                      outline: "none",
-                      minHeight: "44px",       // ← replaces rows={1}
-                      height: "44px",          // ← initial height, JS takes over after first render
-                      overflowY: "hidden",     // ← JS will switch to "auto" when capped
-                      display: "block",
-                      width: "100%",
-                    }}
-                  />
+                  ref={textareaRef}          // ← swap from inputRef to textareaRef
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKey}
+                  placeholder="Ask about Companies Act, LLP Act compliance..."
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    border: "none",
+                    resize: "none",          // ← disable manual drag-resize
+                    color: "#e2e8f0",
+                    fontSize: "14px",
+                    lineHeight: "22px",
+                    fontFamily: "inherit",
+                    outline: "none",
+                    minHeight: "44px",       // ← replaces rows={1}
+                    height: "44px",          // ← initial height, JS takes over after first render
+                    overflowY: "hidden",     // ← JS will switch to "auto" when capped
+                    display: "block",
+                    width: "100%",
+                  }}
+                />
                 <button onClick={() => handleSubmit()} disabled={!input.trim() || loading} style={{ width: "34px", height: "34px", borderRadius: "8px", background: input.trim() ? "#10b981" : "rgba(148,163,184,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "not-allowed", flexShrink: 0, transition: "background 0.2s" }}>
                   <SendHorizontal size={15} color={input.trim() ? "#fff" : "#475569"} />
                 </button>

@@ -23,19 +23,14 @@ env/
 .env.local
 
 # -----------------------------
-# Chroma / Vector Databases
-# -----------------------------
-chroma/
-chromadb/
-*.db
-*.sqlite3
-
-# -----------------------------
 # Generated Embeddings / Indexes
 # -----------------------------
 index/
 faiss_index/
 vectorstore/
+/chroma/
+/chromadb/
+
 
 # -----------------------------
 # Logs

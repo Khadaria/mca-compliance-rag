@@ -5,6 +5,14 @@ langchain-community
 langchain-chroma
 langchain-ollama
 
+# LLM Providers (cloud, free tier)
+langchain-groq
+langchain-google-genai
+
+# Embeddings (runs locally in-process, no Ollama server needed)
+langchain-huggingface
+sentence-transformers
+
 # Vector Database
 chromadb
 
@@ -17,3 +25,5 @@ pypdf
 
 # User Interface
 streamlit
+fastapi
+uvicorn

@@ -8,7 +8,7 @@ from rag_compliance.config import CHROMA_PATH, DATA_PATH
 from rag_compliance.embeddings.embedder import get_embedding_function
 from rag_compliance.ingestion.loader import load_and_filter_documents
 from rag_compliance.ingestion.chunker import split_documents
-from rag_compliance.ingestion.metadata import enrich_chunks_with_metadata
+# from rag_compliance.ingestion.metadata import enrich_chunks_with_metadata  # Skipped: too slow on CPU (9408 chunks × ~5s each = 13+ hrs)
 
 
 def main():
@@ -23,9 +23,11 @@ def main():
     documents = load_and_filter_documents(DATA_PATH)
     chunks = split_documents(documents)
     
-    print("Enriching chunks with LLM Metadata...")
-    chunks = enrich_chunks_with_metadata(chunks)
-    
+    # Metadata extraction skipped — runs once per chunk via LLM (too slow on CPU)
+    # To re-enable: uncomment the import above and the two lines below
+    # print("Enriching chunks with LLM Metadata...")
+    # chunks = enrich_chunks_with_metadata(chunks)
+
     add_to_chroma(chunks)
 
 
