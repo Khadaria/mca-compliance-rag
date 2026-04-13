@@ -1,9 +1,11 @@
-from langchain_community.vectorstores import Chroma
 from langchain_community.retrievers import BM25Retriever
-from langchain_core.documents import Document
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone
 
-from rag_compliance.config import CHROMA_PATH
+from rag_compliance.config import DATA_PATH, PINECONE_API_KEY, PINECONE_INDEX, PINECONE_NAMESPACE
 from rag_compliance.embeddings.embedder import get_embedding_function
+from rag_compliance.ingestion.chunker import split_documents
+from rag_compliance.ingestion.loader import load_and_filter_documents
 
 
 class HybridRetriever:
@@ -55,13 +57,20 @@ class HybridRetriever:
 def get_hybrid_retriever():
     """
     Returns HybridRetriever combining:
-    - Chroma (vector search)
+    - Pinecone (vector search)
     - BM25 (keyword search)
     """
 
-    db = Chroma(
-        persist_directory=CHROMA_PATH,
-        embedding_function=get_embedding_function()
+    if not PINECONE_API_KEY:
+        raise RuntimeError("PINECONE_API_KEY is not set.")
+
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    index = pc.Index(PINECONE_INDEX)
+    db = PineconeVectorStore(
+        index=index,
+        embedding=get_embedding_function(),
+        namespace=PINECONE_NAMESPACE,
+        text_key="text",
     )
 
     vector_retriever = db.as_retriever(
@@ -72,16 +81,8 @@ def get_hybrid_retriever():
     bm25_retriever = None
 
     try:
-        docs_dict = db.get()
-
-        if docs_dict and "documents" in docs_dict and len(docs_dict["documents"]) > 0:
-            documents = [
-                Document(page_content=content, metadata=meta)
-                for content, meta in zip(
-                    docs_dict["documents"], docs_dict["metadatas"]
-                )
-            ]
-
+        documents = split_documents(load_and_filter_documents(DATA_PATH))
+        if documents:
             bm25_retriever = BM25Retriever.from_documents(documents)
             bm25_retriever.k = 20
 

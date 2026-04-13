@@ -2,7 +2,8 @@
 langchain
 langchain-core
 langchain-community
-langchain-chroma
+langchain-pinecone
+langchain-text-splitters
 
 # LLM Provider
 langchain-groq
@@ -12,7 +13,7 @@ langchain-huggingface
 sentence-transformers
 
 # Vector Database
-chromadb
+pinecone
 
 # Retrieval Enhancements
 rank-bm25

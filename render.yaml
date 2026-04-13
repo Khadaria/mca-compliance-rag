@@ -12,5 +12,17 @@
         value: llama-3.3-70b-versatile
       - key: EMBEDDING_MODEL
         value: all-MiniLM-L6-v2
+      - key: PINECONE_INDEX
+        value: complics-index
+      - key: PINECONE_NAMESPACE
+        value: default
+      - key: PINECONE_CLOUD
+        value: aws
+      - key: PINECONE_REGION
+        value: us-east-1
+      - key: PINECONE_DIMENSION
+        value: "384"
       - key: GROQ_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
         sync: false

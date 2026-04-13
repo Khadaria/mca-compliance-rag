@@ -243,7 +243,7 @@ function LandingPage({ onEnter }) {
               </div>
               <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Database size={12} color="#0ea5e9" />
-                <span style={{ fontSize: "11px", color: "#0ea5e9" }}>Querying ChromaDB vector store...</span>
+                <span style={{ fontSize: "11px", color: "#0ea5e9" }}>Querying Pinecone vector store...</span>
               </div>
               <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Sparkles size={12} color="#a78bfa" />
@@ -290,7 +290,7 @@ function LandingPage({ onEnter }) {
               {
                 step: "02", icon: Database, color: "#a78bfa", bg: "rgba(167,139,250,0.1)",
                 title: "Semantic Vector Search",
-                desc: "Your query is embedded and matched against our ChromaDB index of the MCA statutory corpus — finding the most legally relevant passages.",
+                desc: "Your query is embedded and matched against our Pinecone index of the MCA statutory corpus — finding the most legally relevant passages.",
               },
               {
                 step: "03", icon: Sparkles, color: "#10b981", bg: "rgba(16,185,129,0.1)",
@@ -496,7 +496,7 @@ function Workspace({ onBack }) {
               <div style={{ fontSize: "10px", color: "#334155", letterSpacing: "0.08em", fontWeight: 600, marginBottom: "8px" }}>RAG PIPELINE</div>
               <div style={{ padding: "10px 12px", borderRadius: "8px", background: "rgba(15,23,42,0.4)", border: "1px solid rgba(148,163,184,0.06)", fontSize: "11px", color: "#475569", lineHeight: 1.7 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>Embeddings</span><span style={{ color: "#64748b" }}>Sentence Transformers</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Vector DB</span><span style={{ color: "#64748b" }}>ChromaDB</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Vector DB</span><span style={{ color: "#64748b" }}>Pinecone</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>LLM</span><span style={{ color: "#64748b" }}>Groq Llama</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>Framework</span><span style={{ color: "#64748b" }}>LangChain</span></div>
               </div>
@@ -571,7 +571,7 @@ function Workspace({ onBack }) {
                 <div style={{ flex: 1, background: "rgba(15,23,42,0.7)", border: "1px solid rgba(148,163,184,0.1)", borderRadius: "12px", padding: "18px 20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
                     <div style={{ width: "8px", height: "8px", borderRadius: "50%", border: "1.5px solid #10b981", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: "11px", color: "#10b981" }}>Retrieving from ChromaDB · Generating with Groq...</span>
+                    <span style={{ fontSize: "11px", color: "#10b981" }}>Retrieving from Pinecone · Generating with Groq...</span>
                   </div>
                   <LoadingSkeleton />
                 </div>
@@ -642,7 +642,7 @@ function Workspace({ onBack }) {
               <div style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.12)", borderRadius: "8px", padding: "10px 12px", marginBottom: "14px", display: "flex", gap: "8px", alignItems: "flex-start" }}>
                 <Shield size={13} color="#10b981" style={{ flexShrink: 0, marginTop: "1px" }} />
                 <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.6 }}>
-                  These are the raw text passages retrieved from ChromaDB before generation. The answer is synthesized exclusively from these sources.
+                  These are the raw text passages retrieved before generation. The answer is synthesized exclusively from these sources.
                 </span>
               </div>
               <div style={{ fontSize: "10px", color: "#334155", letterSpacing: "0.08em", fontWeight: 600, marginBottom: "10px" }}>LEGAL CITATIONS</div>

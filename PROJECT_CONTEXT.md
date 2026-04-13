@@ -12,7 +12,7 @@ CompliCS is a legal-domain RAG assistant for Indian corporate compliance. It ret
 - frontend: React + Vite
 - LLM: Groq
 - embeddings: HuggingFace sentence-transformers
-- vector DB: Chroma
+- vector DB: Pinecone
 - lexical retrieval: BM25
 - reranker: Flashrank
 
@@ -27,7 +27,7 @@ CompliCS is a legal-domain RAG assistant for Indian corporate compliance. It ret
 - [backend/rag_compliance/embeddings/embedder.py](c:/Users/khada/OneDrive/Documents/GitHub/mca-compliance-rag/backend/rag_compliance/embeddings/embedder.py)
   sentence-transformers embedder
 - [backend/rag_compliance/retrieval/hybrid_retriever.py](c:/Users/khada/OneDrive/Documents/GitHub/mca-compliance-rag/backend/rag_compliance/retrieval/hybrid_retriever.py)
-  Chroma + BM25 retrieval
+  Pinecone + BM25 retrieval
 - [backend/rag_compliance/retrieval/reranker.py](c:/Users/khada/OneDrive/Documents/GitHub/mca-compliance-rag/backend/rag_compliance/retrieval/reranker.py)
   Flashrank reranking
 - [backend/rag_compliance/generation/chain.py](c:/Users/khada/OneDrive/Documents/GitHub/mca-compliance-rag/backend/rag_compliance/generation/chain.py)
@@ -46,7 +46,7 @@ CompliCS is a legal-domain RAG assistant for Indian corporate compliance. It ret
 
 1. User submits a question from the frontend.
 2. Frontend posts to `POST /query`.
-3. Backend retrieves Chroma matches and BM25 matches.
+3. Backend retrieves Pinecone matches and BM25 matches.
 4. Results are deduplicated and reranked.
 5. Top passages are injected into the Groq prompt.
 6. Backend returns the answer and source snippets.
@@ -54,7 +54,7 @@ CompliCS is a legal-domain RAG assistant for Indian corporate compliance. It ret
 
 ## Important Constraints
 
-- `backend/chroma` must match the configured embedding model.
+- the Pinecone index must match the configured embedding model.
 - `GROQ_API_KEY` must be present in the backend environment.
 - chat history is in-memory only and resets on backend restart.
 - this repo no longer uses Ollama or Streamlit.

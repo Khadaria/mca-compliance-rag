@@ -7,8 +7,8 @@ The current stack is:
 - `backend/`: FastAPI API
 - LLM: Groq
 - embeddings: `sentence-transformers/all-MiniLM-L6-v2`
-- vector store: Chroma persisted at `backend/chroma`
-- retrieval: hybrid Chroma + BM25 with Flashrank reranking
+- vector store: Pinecone
+- retrieval: hybrid Pinecone + BM25 with Flashrank reranking
 
 This project is for educational use and does not constitute legal advice.
 
@@ -20,7 +20,6 @@ mca-compliance-rag/
 │  ├─ server.py
 │  ├─ populate_database.py
 │  ├─ requirements.txt
-│  ├─ chroma/
 │  ├─ corpus_raw_v1/
 │  └─ rag_compliance/
 ├─ frontend/
@@ -50,6 +49,11 @@ Set environment variables:
 $env:GROQ_API_KEY="your_key"
 $env:GROQ_MODEL="llama-3.3-70b-versatile"
 $env:EMBEDDING_MODEL="all-MiniLM-L6-v2"
+$env:PINECONE_API_KEY="your_pinecone_key"
+$env:PINECONE_INDEX="complics-index"
+$env:PINECONE_NAMESPACE="default"
+$env:PINECONE_CLOUD="aws"
+$env:PINECONE_REGION="us-east-1"
 ```
 
 Start the API:
@@ -81,17 +85,22 @@ http://localhost:5173
 
 ## Rebuild the Vector Store
 
-If you change the embedding model or corpus, rebuild Chroma:
+If you change the embedding model or corpus, rebuild the Pinecone index:
 
 ```powershell
 cd backend
 $env:EMBEDDING_MODEL="all-MiniLM-L6-v2"
+$env:PINECONE_API_KEY="your_pinecone_key"
+$env:PINECONE_INDEX="complics-index"
+$env:PINECONE_NAMESPACE="default"
+$env:PINECONE_CLOUD="aws"
+$env:PINECONE_REGION="us-east-1"
 python populate_database.py --reset
 ```
 
 Important:
-- if your current `backend/chroma` was built with Ollama embeddings, rebuild it before deploying
 - the deployed app must use the same embedding model that was used to build the stored vectors
+- the Pinecone index must be populated before the backend can answer queries
 
 ## Deployment
 
@@ -108,6 +117,12 @@ Backend:
 - `GROQ_API_KEY`
 - `GROQ_MODEL`
 - `EMBEDDING_MODEL`
+- `PINECONE_API_KEY`
+- `PINECONE_INDEX`
+- `PINECONE_NAMESPACE`
+- `PINECONE_CLOUD`
+- `PINECONE_REGION`
+- `PINECONE_DIMENSION`
 
 Frontend:
 - `VITE_API_URL`

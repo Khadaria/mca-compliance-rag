@@ -7,7 +7,7 @@ Target deployment:
 - backend: Render web service
 - LLM: Groq
 - embeddings: `sentence-transformers/all-MiniLM-L6-v2`
-- vector store: `backend/chroma`
+- vector store: Pinecone
 
 No Docker is required.
 
@@ -18,7 +18,7 @@ The frontend is a Vite app that calls:
 - `GET /health`
 
 The backend is a FastAPI app that:
-- loads the Chroma database from `backend/chroma`
+- connects to a Pinecone index
 - retrieves with hybrid search
 - reranks with Flashrank
 - sends grounded prompts to Groq
@@ -28,7 +28,8 @@ The backend is a FastAPI app that:
 You need:
 - a GitHub repo with this project pushed
 - a Groq API key
-- the vector store in `backend/chroma` built with `all-MiniLM-L6-v2`
+- a Pinecone API key
+- a Pinecone index populated with embeddings built using `all-MiniLM-L6-v2`
 
 ## Step 1. Get a Groq API Key
 
@@ -36,9 +37,7 @@ You need:
 2. Create an API key
 3. Save it for Render
 
-## Step 2. Rebuild Chroma If Needed
-
-If your stored vectors were created with Ollama embeddings, rebuild before deploy.
+## Step 2. Build the Pinecone Index
 
 From the repo root:
 
@@ -48,21 +47,25 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 $env:EMBEDDING_MODEL="all-MiniLM-L6-v2"
+$env:PINECONE_API_KEY="your_pinecone_key"
+$env:PINECONE_INDEX="complics-index"
+$env:PINECONE_NAMESPACE="default"
+$env:PINECONE_CLOUD="aws"
+$env:PINECONE_REGION="us-east-1"
 python populate_database.py --reset
 ```
 
 What this does:
-- clears `backend/chroma`
+- clears the configured Pinecone namespace
 - loads the PDFs in `backend/corpus_raw_v1`
 - chunks them
 - embeds with `all-MiniLM-L6-v2`
-- stores the new vectors in Chroma
+- stores the new vectors in Pinecone
 
 ## Step 3. Commit the Deployment Files
 
 Make sure these are committed:
 - backend code
-- `backend/chroma/`
 - frontend code
 - `render.yaml`
 - updated docs
@@ -93,7 +96,7 @@ This repo includes [render.yaml](c:/Users/khada/OneDrive/Documents/GitHub/mca-co
 4. Connect your GitHub repo
 5. Render will read `render.yaml`
 
-Then add your Groq key in the service environment settings.
+Then add your Groq and Pinecone keys in the service environment settings.
 
 ### Option B: Create a Web Service Manually
 
@@ -108,6 +111,12 @@ Environment variables:
 - `GROQ_API_KEY=your_actual_key`
 - `GROQ_MODEL=llama-3.3-70b-versatile`
 - `EMBEDDING_MODEL=all-MiniLM-L6-v2`
+- `PINECONE_API_KEY=your_actual_key`
+- `PINECONE_INDEX=complics-index`
+- `PINECONE_NAMESPACE=default`
+- `PINECONE_CLOUD=aws`
+- `PINECONE_REGION=us-east-1`
+- `PINECONE_DIMENSION=384`
 
 After deploy, test:
 
@@ -145,21 +154,21 @@ After both services are live:
 
 ## Common Problems
 
-### 1. Chroma dimension mismatch
+### 1. Pinecone dimension mismatch
 
 Cause:
-- `backend/chroma` was built with a different embedding model
+- the Pinecone index was created with a different embedding dimension or embedding model
 
 Fix:
-- rebuild with `all-MiniLM-L6-v2`
-- recommit `backend/chroma`
+- recreate or repopulate the Pinecone index with `all-MiniLM-L6-v2`
 - redeploy
 
 ### 2. Backend crashes on startup
 
 Check:
 - `GROQ_API_KEY` is set
-- `backend/chroma` exists in the deployed code
+- `PINECONE_API_KEY` is set
+- `PINECONE_INDEX` exists and contains vectors
 - `requirements.txt` installed cleanly
 
 ### 3. Frontend cannot reach backend
@@ -177,8 +186,9 @@ This is expected on free Render:
 
 ## Exact Deployment Checklist
 
-- `backend/chroma` exists and is current
+- Pinecone index exists and is populated
 - `GROQ_API_KEY` ready
+- `PINECONE_API_KEY` ready
 - code pushed to GitHub
 - Render backend deployed
 - backend `/health` returns `{"status":"ok"}`
