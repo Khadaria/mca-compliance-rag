@@ -34,23 +34,28 @@ def get_llm():
         return ChatOllama(model=LLM_MODEL)
 
 
-# --- Lazy globals: initialized via initialize() called from FastAPI lifespan ---
+# --- Lazy globals: initialized in background thread after uvicorn binds ---
 _llm = None
 _hybrid_retriever = None
 _reranker = None
+_ready = False
+
+
+def is_ready() -> bool:
+    return _ready
 
 
 def initialize():
-    """Called once after uvicorn binds the port (from FastAPI lifespan).
-    Keeps the port-scan alive while heavy models load."""
-    global _llm, _hybrid_retriever, _reranker
+    """Runs in a background thread. Sets _ready=True when done."""
+    global _llm, _hybrid_retriever, _reranker, _ready
     print("[Startup] Loading LLM...")
     _llm = get_llm()
     print("[Startup] Loading hybrid retriever + embeddings...")
     _hybrid_retriever = get_hybrid_retriever()
     print("[Startup] Loading reranker...")
     _reranker = ComponentReranker()
-    print("[Startup] All components ready.")
+    _ready = True
+    print("[Startup] All components ready — serving requests.")
 
 
 def create_conversational_chain():
