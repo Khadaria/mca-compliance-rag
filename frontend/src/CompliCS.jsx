@@ -59,7 +59,7 @@ const QUICK_ACTIONS = [
 function MarkdownRenderer({ content }) {
   // Pre-process: strip code fences and control tokens that may leak from the LLM
   let cleaned = content.replace(/```[\s\S]*?```/g, '').replace(/```/g, '');
-  // Strip Mistral control tokens
+  // Strip common control tokens if they ever leak from model output
   cleaned = cleaned.replace(/\[control_\d+\]/g, '').replace(/\[\/?[A-Z_]{2,}\]/g, '');
   // Clean up excessive whitespace
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
@@ -247,7 +247,7 @@ function LandingPage({ onEnter }) {
               </div>
               <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Sparkles size={12} color="#a78bfa" />
-                <span style={{ fontSize: "11px", color: "#a78bfa" }}>Generating with Mistral LLM...</span>
+                <span style={{ fontSize: "11px", color: "#a78bfa" }}>Generating with Groq-hosted Llama...</span>
               </div>
             </div>
             <div style={{ padding: "28px 28px" }}>
@@ -295,7 +295,7 @@ function LandingPage({ onEnter }) {
               {
                 step: "03", icon: Sparkles, color: "#10b981", bg: "rgba(16,185,129,0.1)",
                 title: "Grounded Generation",
-                desc: "Mistral LLM synthesizes an answer using only the retrieved text. The raw source snippets are shown alongside every answer.",
+                desc: "A Groq-hosted Llama model synthesizes an answer using only the retrieved text. The raw source snippets are shown alongside every answer.",
               },
             ].map((item, i) => (
               <div key={i} style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(148,163,184,0.1)", borderRadius: "14px", padding: "32px 28px", position: "relative", overflow: "hidden" }}>
@@ -413,7 +413,7 @@ function Workspace({ onBack }) {
       setSources(data.sources || []);
       if (data.sources?.length) setSourcesOpen(true);
     } catch (err) {
-      const errorMsg = `## ⚠️ Connection Error\n\nCould not reach the CompliCS backend server.\n\n**Details:** ${err.message}\n\n### How to Fix\n1. Make sure the FastAPI server is running: \`cd backend && python server.py\`\n2. Verify it is accessible at ${API_URL}/health\n3. Check if Ollama is running with the Mistral model loaded`;
+      const errorMsg = `## ⚠️ Connection Error\n\nCould not reach the CompliCS backend server.\n\n**Details:** ${err.message}\n\n### How to Fix\n1. Make sure the FastAPI server is running: \`cd backend && python server.py\`\n2. Verify it is accessible at ${API_URL}/health\n3. Confirm the backend has a valid \`GROQ_API_KEY\` configured`;
       setMessages((prev) => [...prev, { role: "assistant", content: errorMsg, sources: [] }]);
     }
     setLoading(false);
@@ -495,9 +495,9 @@ function Workspace({ onBack }) {
             <div style={{ padding: "0 14px", marginTop: "auto", paddingBottom: "16px" }}>
               <div style={{ fontSize: "10px", color: "#334155", letterSpacing: "0.08em", fontWeight: 600, marginBottom: "8px" }}>RAG PIPELINE</div>
               <div style={{ padding: "10px 12px", borderRadius: "8px", background: "rgba(15,23,42,0.4)", border: "1px solid rgba(148,163,184,0.06)", fontSize: "11px", color: "#475569", lineHeight: 1.7 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Embeddings</span><span style={{ color: "#64748b" }}>Ollama</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Embeddings</span><span style={{ color: "#64748b" }}>Sentence Transformers</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>Vector DB</span><span style={{ color: "#64748b" }}>ChromaDB</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}><span>LLM</span><span style={{ color: "#64748b" }}>Mistral 7B</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>LLM</span><span style={{ color: "#64748b" }}>Groq Llama</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>Framework</span><span style={{ color: "#64748b" }}>LangChain</span></div>
               </div>
             </div>
@@ -571,7 +571,7 @@ function Workspace({ onBack }) {
                 <div style={{ flex: 1, background: "rgba(15,23,42,0.7)", border: "1px solid rgba(148,163,184,0.1)", borderRadius: "12px", padding: "18px 20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
                     <div style={{ width: "8px", height: "8px", borderRadius: "50%", border: "1.5px solid #10b981", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: "11px", color: "#10b981" }}>Retrieving from ChromaDB · Generating with Mistral...</span>
+                    <span style={{ fontSize: "11px", color: "#10b981" }}>Retrieving from ChromaDB · Generating with Groq...</span>
                   </div>
                   <LoadingSkeleton />
                 </div>

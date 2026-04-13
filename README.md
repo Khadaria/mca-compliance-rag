@@ -1,93 +1,115 @@
-# Corporate Compliance RAG Assistant (India)
+﻿# CompliCS
 
-This project implements a **Retrieval-Augmented Generation (RAG)** system focused on **Indian corporate compliance**, specifically the **Companies Act, 2013** and the **Limited Liability Partnership (LLP) Act, 2008**.
+CompliCS is a Retrieval-Augmented Generation (RAG) assistant for Indian corporate compliance. It answers questions against a curated corpus covering the Companies Act, LLP Act, related rules, and filing forms.
 
-The system assists in answering compliance-related queries by retrieving relevant statutory provisions, forms, and filing requirements from a curated document corpus and generating grounded, context-aware responses using a language model.
+The current stack is:
+- `frontend/`: React + Vite UI
+- `backend/`: FastAPI API
+- LLM: Groq
+- embeddings: `sentence-transformers/all-MiniLM-L6-v2`
+- vector store: Chroma persisted at `backend/chroma`
+- retrieval: hybrid Chroma + BM25 with Flashrank reranking
 
----
+This project is for educational use and does not constitute legal advice.
 
-## Problem Statement
+## Repository Layout
 
-Indian corporate compliance involves navigating extensive legal texts, frequent amendments, and strict filing timelines. Professionals and students often need quick, accurate answers to questions such as:
-- Applicable forms for a specific compliance event
-- Due dates and penalties
-- Relevant sections of the Companies Act or LLP Act
+```text
+mca-compliance-rag/
+├─ backend/
+│  ├─ server.py
+│  ├─ populate_database.py
+│  ├─ requirements.txt
+│  ├─ chroma/
+│  ├─ corpus_raw_v1/
+│  └─ rag_compliance/
+├─ frontend/
+│  ├─ src/
+│  ├─ public/
+│  └─ package.json
+├─ .env.example
+├─ DEPLOYMENT_GUIDE.md
+├─ PROJECT_CONTEXT.md
+└─ render.yaml
+```
 
+## Local Development
 
----
+### 1. Backend
 
-## Solution Overview
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-This project uses a **RAG architecture** to:
-1. Embed statutory documents into a vector database
-2. Retrieve the most relevant legal context for a user query
-3. Generate responses strictly grounded in the retrieved content
+Set environment variables:
 
-This approach helps **reduce hallucinations** and improves reliability in the legal domain.
+```powershell
+$env:GROQ_API_KEY="your_key"
+$env:GROQ_MODEL="llama-3.3-70b-versatile"
+$env:EMBEDDING_MODEL="all-MiniLM-L6-v2"
+```
 
----
+Start the API:
 
-## Key Features
+```powershell
+python server.py
+```
 
-- Query-based retrieval from Companies Act and LLP Act documents
-- Context-aware and explainable responses
-- Metadata-based filtering (Act, Section, Form, Due Date)
-- Modular and extensible RAG pipeline
+Health check:
 
----
+```text
+http://localhost:8000/health
+```
 
-## Tech Stack
+### 2. Frontend
 
-- **Language:** Python  
-- **LLM:** Open-source LLM (Mistral / LLaMA)  
-- **Embeddings:** Sentence Transformers  
-- **Vector Database:** ChromaDB  
-- **RAG Framework:** LangChain  
-- **Frontend:** Streamlit  
+```powershell
+cd frontend
+npm install
+$env:VITE_API_URL="http://localhost:8000"
+npm run dev
+```
 
----
+Open:
 
-## Data Sources
+```text
+http://localhost:5173
+```
 
-- Companies Act, 2013 (selected sections)
-- LLP Act, 2008
-- Statutory forms and compliance rules
-- Official circulars and amendments (where applicable)
+## Rebuild the Vector Store
 
-All data used is publicly available.
+If you change the embedding model or corpus, rebuild Chroma:
 
----
+```powershell
+cd backend
+$env:EMBEDDING_MODEL="all-MiniLM-L6-v2"
+python populate_database.py --reset
+```
 
-## System Architecture
+Important:
+- if your current `backend/chroma` was built with Ollama embeddings, rebuild it before deploying
+- the deployed app must use the same embedding model that was used to build the stored vectors
 
-User Query  
-→ Embedding  
-→ Vector Database Retrieval  
-→ Context Injection  
-→ LLM Response Generation
+## Deployment
 
----
+Use this no-Docker route:
+- frontend on Vercel
+- backend on Render
+- Groq API for generation
 
-## Intended Use
+The full step-by-step walkthrough is in [DEPLOYMENT_GUIDE.md](c:/Users/khada/OneDrive/Documents/GitHub/mca-compliance-rag/DEPLOYMENT_GUIDE.md).
 
-- Academic project on RAG and vector databases
-- Educational assistance for corporate law concepts
-- Demonstration of legal-domain AI applications
+## Environment Variables
 
- *This tool is for educational purposes only and does not constitute legal advice.*
+Backend:
+- `GROQ_API_KEY`
+- `GROQ_MODEL`
+- `EMBEDDING_MODEL`
 
----
+Frontend:
+- `VITE_API_URL`
 
-##  Future Enhancements
-
-- Citation highlighting
-- Annual compliance calendar generation
-- Document upload and analysis
-
-
----
-
-##  Author
-
-**Vishesh Khadaria**  
-**Dhruv Chaturvedi**
+See [.env.example](c:/Users/khada/OneDrive/Documents/GitHub/mca-compliance-rag/.env.example) for a starter template.
