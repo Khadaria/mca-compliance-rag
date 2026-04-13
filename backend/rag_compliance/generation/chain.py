@@ -22,19 +22,37 @@ def get_llm():
     )
 
 
-# Initialize once at module load (important for performance)
-llm = get_llm()
-hybrid_retriever = get_hybrid_retriever()
-reranker = ComponentReranker()
+llm = None
+hybrid_retriever = None
+reranker = None
 
 
-def create_conversational_chain():
+def get_runtime_components():
+    """Initialize heavy RAG components lazily so the web server can bind quickly."""
+    global llm, hybrid_retriever, reranker
+
+    if llm is None:
+        print("[RAG] Initializing Groq client...")
+        llm = get_llm()
+
+    if hybrid_retriever is None:
+        print("[RAG] Initializing hybrid retriever...")
+        hybrid_retriever = get_hybrid_retriever()
+
+    if reranker is None:
+        print("[RAG] Initializing reranker...")
+        reranker = ComponentReranker()
+
+    return llm, hybrid_retriever, reranker
+
+
+def create_conversational_chain(llm_instance):
     prompt = ChatPromptTemplate.from_messages([
         ("system", PROMPT_TEMPLATE),
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "Context:\n{context}\n\nQuestion:\n{question}")
     ])
-    chain = prompt | llm
+    chain = prompt | llm_instance
     return chain
 
 
@@ -45,14 +63,16 @@ def process_query_with_rag(query: str, session_id: str, get_session_history_func
     3. Generate response with context
     """
 
+    llm_instance, retriever_instance, reranker_instance = get_runtime_components()
+
     # 1. Retrieve
-    if hasattr(hybrid_retriever, "get_relevant_documents"):
-        raw_docs = hybrid_retriever.get_relevant_documents(query)
+    if hasattr(retriever_instance, "get_relevant_documents"):
+        raw_docs = retriever_instance.get_relevant_documents(query)
     else:
-        raw_docs = hybrid_retriever.invoke(query)
+        raw_docs = retriever_instance.invoke(query)
 
     # 2. Rerank
-    reranked_docs = reranker.rerank(query, raw_docs, top_k=5)
+    reranked_docs = reranker_instance.rerank(query, raw_docs, top_k=5)
 
     # 3. Build context string
     context = "\n\n---\n\n".join([doc.page_content for doc in reranked_docs])
@@ -87,7 +107,7 @@ def process_query_with_rag(query: str, session_id: str, get_session_history_func
             seen.add(key)
 
     # 5. Build conversational chain
-    chain = create_conversational_chain()
+    chain = create_conversational_chain(llm_instance)
 
     conversational_chain = RunnableWithMessageHistory(
         chain,
