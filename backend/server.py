@@ -152,6 +152,12 @@ def query_rag(request: QueryRequest):
         }
 
 
+@app.get("/")
+@app.head("/")
+def read_root():
+    return {"status": "ok", "message": "CompliCS API is running"}
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "ready": is_ready()}
