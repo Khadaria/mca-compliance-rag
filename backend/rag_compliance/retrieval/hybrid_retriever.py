@@ -1,3 +1,5 @@
+import os
+
 from langchain_community.vectorstores import Chroma
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
@@ -32,20 +34,32 @@ class HybridRetriever:
             raise AttributeError("Retriever has no valid retrieval method")
 
     def get_relevant_documents(self, query: str):
+        """
+        Reciprocal Rank Fusion of the BM25 and vector result lists, weighted
+        by bm25_weight/vector_weight. RRF_K is the standard damping constant
+        that keeps low-ranked results from swinging the score too sharply.
+        Dedup key is the chunk id (stable/unique post-ingestion-rewrite)
+        rather than raw page_content, since two distinct chunks could in
+        principle share identical text.
+        """
         bm25_docs = self._safe_retrieve(self.bm25, query)
         vector_docs = self._safe_retrieve(self.vector, query)
 
-        combined = vector_docs + bm25_docs
+        RRF_K = 60
+        scores = {}
 
-        # Deduplicate
-        seen = set()
-        unique_docs = []
-        for doc in combined:
-            if doc.page_content not in seen:
-                seen.add(doc.page_content)
-                unique_docs.append(doc)
+        for rank, doc in enumerate(vector_docs):
+            key = doc.metadata.get("id", doc.page_content)
+            scores.setdefault(key, {"score": 0.0, "doc": doc})
+            scores[key]["score"] += self.vector_weight * (1.0 / (RRF_K + rank + 1))
 
-        return unique_docs
+        for rank, doc in enumerate(bm25_docs):
+            key = doc.metadata.get("id", doc.page_content)
+            scores.setdefault(key, {"score": 0.0, "doc": doc})
+            scores[key]["score"] += self.bm25_weight * (1.0 / (RRF_K + rank + 1))
+
+        ranked = sorted(scores.values(), key=lambda x: x["score"], reverse=True)
+        return [entry["doc"] for entry in ranked]
 
     def invoke(self, query: str):
         return self.get_relevant_documents(query)
@@ -59,8 +73,13 @@ def get_hybrid_retriever():
     - BM25 (keyword search)
     """
 
+    # CHROMA_PATH_OVERRIDE lets a verification run point at an alternate
+    # store (e.g. chroma_v2) without changing the production default that
+    # the running server uses.
+    chroma_path = os.environ.get("CHROMA_PATH_OVERRIDE", CHROMA_PATH)
+
     db = Chroma(
-        persist_directory=CHROMA_PATH,
+        persist_directory=chroma_path,
         embedding_function=get_embedding_function()
     )
 

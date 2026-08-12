@@ -26,6 +26,8 @@ env/
 # Chroma / Vector Databases
 # -----------------------------
 chroma/
+chroma_v2/
+chroma_backup*/
 chromadb/
 *.db
 *.sqlite3

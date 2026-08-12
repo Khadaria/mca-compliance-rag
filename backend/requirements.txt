@@ -17,3 +17,7 @@ pypdf
 
 # User Interface
 streamlit
+
+# API server (server.py, the FastAPI backend the React frontend talks to)
+fastapi
+uvicorn

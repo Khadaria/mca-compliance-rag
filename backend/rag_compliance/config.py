@@ -3,6 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CHROMA_PATH = str(BASE_DIR / "chroma")
+CHROMA_V2_PATH = str(BASE_DIR / "chroma_v2")
 DATA_PATH = str(BASE_DIR / "corpus_raw_v1")
 
 # LLM Constants
